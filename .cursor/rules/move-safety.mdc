@@ -1,0 +1,18 @@
+---
+description: Safety rules for scanning, moving, and undoing files. Tests never touch the real Downloads folder.
+alwaysApply: true
+---
+
+# Move safety
+
+- Scan and move only files sitting directly in the chosen folder. Do not walk subfolders.
+- Do not move a row the user left unchecked. Do not move anything before an explicit confirm.
+- Never overwrite. On a name clash, keep both as `name (1).ext`, then `name (2).ext`.
+- Skip partial downloads and junk before they become movable rows: `.crdownload`, `.part`, `.tmp`, `.download`, `desktop.ini`, `thumbs.db`, `~$*`, and dotfiles.
+- Every applied move is appended to an undo log stored outside the folder being sorted. Undo restores that run, including collision renames, and removes empty folders that run created.
+- Tests and manual checks use a temporary folder. Do not point a test at the real Downloads folder.
+
+```
+Bad: shutil.move(src, dest) when dest already exists.
+Good: if dest exists, move to "report (1).pdf" and record both paths in the undo log.
+```

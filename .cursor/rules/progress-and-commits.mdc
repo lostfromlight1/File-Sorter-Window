@@ -1,0 +1,27 @@
+---
+description: Update TRACKER.md when a feature or phase is finished, and hand Kaung the commit command. Never create the commit.
+alwaysApply: true
+---
+
+# Progress and commits
+
+When a feature or phase is finished:
+
+1. Check it off in `TRACKER.md` in the same change. Add a dated note only when the checkbox alone would hide a real decision.
+2. Do not run `git init`, `git add`, `git commit`, or any command that writes git history.
+3. Do not change git config. Do not pass `--author`. Do not add `Co-authored-by`, `Signed-off-by`, or any other author trailer. The commit Kaung runs uses his existing git identity.
+4. If this folder is not a git repo yet, include `git init` in the command and still do not run it.
+5. Show a PowerShell command he runs himself. The message says why the change exists, in one or two sentences. He may edit the message before running it.
+
+```powershell
+git add TRACKER.md <paths>
+git commit -m @"
+Why this change exists.
+
+"@
+```
+
+```
+Bad: the agent runs git commit, or adds Co-authored-by.
+Good: TRACKER.md is checked off, then the command is shown and not executed.
+```

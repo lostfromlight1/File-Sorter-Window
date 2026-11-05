@@ -1,0 +1,31 @@
+---
+description: V1 scope for the Downloads sorter. Locks the preview-window feature, stack, and what must stay out.
+alwaysApply: true
+---
+
+# V1 scope
+
+A local Windows app that previews where the top-level files in a chosen folder would move, moves only the rows the user confirms, and can undo that run.
+
+## Stack
+
+- Python 3.12 and PySide6.
+- Categories live in a JSON file. A new folder type is a data change, not a widget change.
+- The window scans when the user asks. Do not add `watchdog`, a tray icon, or startup.
+
+## In this version
+
+- Folders: Images, Documents/Word, Documents/Excel, Documents/PDF, Documents/Slides, Installers, Archives, Video, Audio, Others.
+- Preview every top-level file. Each row has a checkbox so it can be left out.
+- Move only after an explicit confirm. Undo that run from a log of source and destination, including collision renames.
+- Skip incomplete downloads (`.crdownload`, `.part`, `.tmp`, `.download`) and junk (`desktop.ini`, `thumbs.db`, `~$*`, dotfiles).
+- If the destination name exists, keep both as `name (1).ext`.
+
+## Out of this version
+
+Do not add folder watching, walking into subfolders, keyword rules, reading inside PDF or Office files, duplicate hashing, photo dates, any model, overwrite, permanent delete, or Recycle Bin cleanup of old installers.
+
+```
+Bad: sort Downloads recursively because a zip was extracted there.
+Good: classify photo.png in the top of the chosen folder as Images, and leave files inside subfolders untouched.
+```
