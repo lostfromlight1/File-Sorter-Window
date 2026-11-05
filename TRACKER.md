@@ -9,18 +9,18 @@ Check an item when that feature or phase is finished. The agent updates this fil
 
 ## Next plan
 
-- [ ] Implementation plan for the preview window. No app code until that plan is accepted.
+- [x] Implementation plan for the preview window. No app code until that plan is accepted.
 
 ## V1 app
 
-- [ ] Project layout, pyproject, and a window that opens
-- [ ] JSON categories for the default folders
-- [ ] Scan top-level files and skip partial downloads and junk
-- [ ] Classify by extension, with Others as the fallback
-- [ ] Preview table with a checkbox on each row
-- [ ] Move only confirmed rows, keeping both files on a name clash
-- [ ] Undo log outside the sorted folder, and an Undo action
-- [ ] Tests on a temporary folder: partial download, subfolder left alone, name clash, and undo
+- [x] Project layout, pyproject, and a window that opens
+- [x] JSON categories for the default folders
+- [x] Scan top-level files and skip partial downloads and junk
+- [x] Classify by extension, with Others as the fallback
+- [x] Preview table with a checkbox on each row
+- [x] Move only confirmed rows, keeping both files on a name clash
+- [x] Undo log outside the sorted folder, and an Undo action
+- [x] Tests on a temporary folder: partial download, subfolder left alone, name clash, and undo
 
 ## Not in v1
 

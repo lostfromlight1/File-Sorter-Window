@@ -1,0 +1,26 @@
+[project]
+name = "file-sorter"
+version = "0.1.0"
+description = "Preview and sort the top level of a folder on Windows."
+requires-python = ">=3.12"
+dependencies = ["PySide6"]
+
+[project.optional-dependencies]
+dev = ["pytest"]
+
+[project.scripts]
+file-sorter = "file_sorter.__main__:main"
+
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+file_sorter = ["data/*.json"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

@@ -1,0 +1,41 @@
+{
+  "categories": [
+    {
+      "folder": "Images",
+      "extensions": ["jpg", "jpeg", "png", "gif", "webp", "heic", "bmp"]
+    },
+    {
+      "folder": "Documents/Word",
+      "extensions": ["doc", "docx", "rtf", "odt"]
+    },
+    {
+      "folder": "Documents/Excel",
+      "extensions": ["xls", "xlsx", "csv", "ods"]
+    },
+    {
+      "folder": "Documents/PDF",
+      "extensions": ["pdf"]
+    },
+    {
+      "folder": "Documents/Slides",
+      "extensions": ["ppt", "pptx", "odp"]
+    },
+    {
+      "folder": "Installers",
+      "extensions": ["exe", "msi"]
+    },
+    {
+      "folder": "Archives",
+      "extensions": ["zip", "rar", "7z", "iso"]
+    },
+    {
+      "folder": "Video",
+      "extensions": ["mp4", "mkv", "mov", "avi", "webm"]
+    },
+    {
+      "folder": "Audio",
+      "extensions": ["mp3", "wav", "flac", "m4a"]
+    }
+  ],
+  "fallback": "Others"
+}
