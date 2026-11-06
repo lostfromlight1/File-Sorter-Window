@@ -33,6 +33,7 @@ Check an item when that feature or phase is finished. The agent updates this fil
 ## Windows exe
 
 - [x] Windowed FileSorter.exe with the category rules packed inside
+- [x] Per-user setup exe with a Start menu shortcut and an uninstall entry
 
 ## Not in v1
 

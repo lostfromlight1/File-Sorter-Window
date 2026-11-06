@@ -31,6 +31,7 @@ exe = EXE(
     [],
     name="FileSorter",
     debug=False,
+    version=str(Path(SPECPATH) / "file_version_info.txt"),
     bootloader_ignore_signals=False,
     strip=False,
     upx=False,
