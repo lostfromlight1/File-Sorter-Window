@@ -33,7 +33,7 @@ Check an item when that feature or phase is finished. The agent updates this fil
 ## Windows exe
 
 - [x] Windowed FileSorter.exe with the category rules packed inside
-- [x] Per-user setup exe with a Start menu shortcut and an uninstall entry
+- [x] Per-user setup exe with a Start menu shortcut and an uninstall entry. 2026-11-06: `dist/FileSorter-Setup.exe` is committed so a clone can run it. The portable exe stays out of git.
 
 ## Not in v1
 

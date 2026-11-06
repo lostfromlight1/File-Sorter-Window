@@ -6,10 +6,10 @@ It looks only at files sitting directly in the folder. Files inside subfolders s
 
 ## Use the app
 
-You need Windows. The setup file already contains the app, so Python and this repository are not required.
+You need Windows. The setup file in this repository already contains the app, so Python is not required.
 
-1. Get `FileSorter-Setup.exe` from the person who built it.
-2. Run it. Windows may show a SmartScreen warning the first time because the setup is not signed.
+1. Clone or download this repository.
+2. Run `dist\FileSorter-Setup.exe`. Windows may show a SmartScreen warning the first time because the setup is not signed.
 3. Leave the folder as offered, or pick another. A desktop shortcut is optional.
 4. Open **File Sorter** from the Start menu.
 
@@ -30,9 +30,7 @@ The undo log is stored outside the folder you sort, at `%LOCALAPPDATA%\FileSorte
 
 Uninstall from **Settings**, **Apps**, **Installed apps**.
 
-`FileSorter.exe` is the same app as one portable file. It has no Start menu entry and no uninstall step. Close it by closing the window.
-
-A clone of this repository does not include either file. The `dist` folder is created on the machine that builds them.
+`FileSorter.exe` is the same app as one portable file. It has no Start menu entry and no uninstall step. Close it by closing the window. A clone does not include that portable file. It is created by the build below.
 
 ## Work on the code
 
@@ -90,4 +88,4 @@ $iscc = @(
 & $iscc FileSorter.iss
 ```
 
-`pyinstaller` writes `dist\FileSorter.exe`. The Inno Setup command writes `dist\FileSorter-Setup.exe`. Hand that setup file to the people who will use the app. The category rules are packed inside it, so edit `src/file_sorter/data/default_rules.json` and run both commands again when those change.
+`pyinstaller` writes `dist\FileSorter.exe`. The Inno Setup command writes `dist\FileSorter-Setup.exe`, which is the copy stored in the repository. The category rules are packed inside it, so edit `src/file_sorter/data/default_rules.json`, run both commands again, and commit the new setup file when those change.
