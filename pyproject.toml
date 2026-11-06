@@ -7,6 +7,7 @@ dependencies = ["PySide6"]
 
 [project.optional-dependencies]
 dev = ["pytest"]
+exe = ["pyinstaller>=6.11"]
 
 [project.scripts]
 file-sorter = "file_sorter.__main__:main"

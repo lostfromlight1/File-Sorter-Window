@@ -30,6 +30,10 @@ Check an item when that feature or phase is finished. The agent updates this fil
 - [x] Move and Undo dialogs describe the files before acting
 - [x] Tests for size, category, summaries, and the table filter
 
+## Windows exe
+
+- [x] Windowed FileSorter.exe with the category rules packed inside
+
 ## Not in v1
 
 Watching, tray, startup, subfolders, keyword rules, file contents, duplicates, photo dates, models, overwrite, and permanent delete.

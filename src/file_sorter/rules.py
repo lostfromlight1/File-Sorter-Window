@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -18,6 +19,11 @@ class Rules:
 
 
 def default_rules_path() -> Path:
+    root = getattr(sys, "_MEIPASS", None)
+    if root:
+        bundled = Path(root) / "file_sorter" / "data" / "default_rules.json"
+        if bundled.is_file():
+            return bundled
     return Path(__file__).resolve().parent / "data" / "default_rules.json"
 
 

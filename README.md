@@ -58,6 +58,17 @@ The undo log is stored outside the folder you sort, at `%LOCALAPPDATA%\FileSorte
 
 Extension mappings live in `src/file_sorter/data/default_rules.json`. Edit that file to add a folder or an extension, then scan again. An extension that is not listed goes to `Others`.
 
+## Build an exe
+
+With the virtual environment activated:
+
+```powershell
+python -m pip install -e ".[exe]"
+pyinstaller --noconfirm file-sorter.spec
+```
+
+That writes `dist\FileSorter.exe`. Double-click it. The window has no console. The category rules are packed inside the exe, so edit `src/file_sorter/data/default_rules.json` and build again when those change. The exe is large because it includes Python and Qt, and the first launch takes a few seconds while it unpacks.
+
 ## Tests
 
 Tests use a temporary folder. They do not touch Downloads.
