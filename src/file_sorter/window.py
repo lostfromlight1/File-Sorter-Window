@@ -1,12 +1,15 @@
 from __future__ import annotations
 
 import sys
+from datetime import datetime
 from pathlib import Path
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QApplication,
+    QCheckBox,
     QFileDialog,
+    QGridLayout,
     QHBoxLayout,
     QLabel,
     QLineEdit,
@@ -26,9 +29,38 @@ from file_sorter.actions import (
     default_log_path,
     has_undo,
     latest_move_count,
+    move_summary,
     undo_latest,
+    undo_summary,
 )
 from file_sorter.rules import Rules, load_rules
+
+COL_INCLUDE = 0
+COL_FILE = 1
+COL_SIZE = 2
+COL_MODIFIED = 3
+COL_DESTINATION = 4
+COL_STATUS = 5
+_CATEGORY_COLUMNS = 4
+
+
+def format_size(size_bytes: int | None) -> str:
+    if size_bytes is None or size_bytes < 0:
+        return ""
+    value = float(size_bytes)
+    for unit in ("B", "KB", "MB"):
+        if value < 1024:
+            if unit == "B":
+                return f"{int(value)} B"
+            return f"{value:.1f} {unit}"
+        value /= 1024
+    return f"{value:.1f} GB"
+
+
+def format_modified(modified: datetime | None) -> str:
+    if modified is None:
+        return ""
+    return modified.strftime("%Y-%m-%d %H:%M")
 
 
 class MainWindow(QMainWindow):
@@ -39,9 +71,11 @@ class MainWindow(QMainWindow):
     ) -> None:
         super().__init__()
         self.setWindowTitle("File Sorter")
-        self.resize(900, 520)
+        self.resize(980, 560)
         self._log_path = log_path or default_log_path()
         self._rows: list[PreviewRow] = []
+        self._visible: list[int] = []
+        self._category_boxes: dict[str, QCheckBox] = {}
         self._rules_error = ""
         try:
             self._rules: Rules | None = load_rules(rules_path)
@@ -64,11 +98,23 @@ class MainWindow(QMainWindow):
         folder_row.addWidget(browse)
         folder_row.addWidget(scan)
 
-        self.table = QTableWidget(0, 4)
-        self.table.setHorizontalHeaderLabels(["Include", "File", "Destination", "Status"])
+        self._category_layout = QGridLayout()
+        self._category_layout.setContentsMargins(0, 0, 0, 0)
+        self._hide_skipped = QCheckBox("Hide skipped")
+        self._hide_skipped.toggled.connect(self._on_hide_skipped)
+        filter_row = QHBoxLayout()
+        filter_row.addLayout(self._category_layout, stretch=1)
+        filter_row.addWidget(self._hide_skipped)
+
+        self.table = QTableWidget(0, 6)
+        self.table.setHorizontalHeaderLabels(
+            ["Include", "File", "Size", "Modified", "Destination", "Status"]
+        )
         self.table.horizontalHeader().setStretchLastSection(True)
-        self.table.setColumnWidth(1, 220)
-        self.table.setColumnWidth(2, 320)
+        self.table.setColumnWidth(COL_FILE, 200)
+        self.table.setColumnWidth(COL_SIZE, 80)
+        self.table.setColumnWidth(COL_MODIFIED, 140)
+        self.table.setColumnWidth(COL_DESTINATION, 280)
         self.table.itemChanged.connect(self._on_item_changed)
 
         action_row = QHBoxLayout()
@@ -82,6 +128,7 @@ class MainWindow(QMainWindow):
 
         layout = QVBoxLayout()
         layout.addLayout(folder_row)
+        layout.addLayout(filter_row)
         layout.addWidget(self.table, stretch=1)
         layout.addLayout(action_row)
         layout.addWidget(self._status)
@@ -106,6 +153,7 @@ class MainWindow(QMainWindow):
         except (OSError, ValueError) as exc:
             QMessageBox.warning(self, "Cannot scan", str(exc))
             return
+        self._rebuild_category_checks()
         self._fill_table(folder)
         movable = sum(1 for row in self._rows if row.movable)
         skipped = len(self._rows) - movable
@@ -113,9 +161,11 @@ class MainWindow(QMainWindow):
         self._refresh_buttons()
 
     def _fill_table(self, folder: Path) -> None:
+        self._visible = self._visible_indexes()
         self.table.blockSignals(True)
-        self.table.setRowCount(len(self._rows))
-        for index, row in enumerate(self._rows):
+        self.table.setRowCount(len(self._visible))
+        for table_row, index in enumerate(self._visible):
+            row = self._rows[index]
             include = QTableWidgetItem()
             include.setCheckState(
                 Qt.CheckState.Checked if row.checked else Qt.CheckState.Unchecked
@@ -124,9 +174,11 @@ class MainWindow(QMainWindow):
             if row.movable:
                 flags |= Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
             include.setFlags(flags)
-            self.table.setItem(index, 0, include)
+            self.table.setItem(table_row, COL_INCLUDE, include)
 
             name = QTableWidgetItem(row.source.name)
+            size = QTableWidgetItem(format_size(row.size_bytes))
+            modified = QTableWidgetItem(format_modified(row.modified))
             destination = QTableWidgetItem(self._destination_text(row, folder))
             status = QTableWidgetItem(row.status)
             text_flags = (
@@ -134,12 +186,22 @@ class MainWindow(QMainWindow):
                 if row.movable
                 else Qt.ItemFlag.NoItemFlags
             )
-            for item in (name, destination, status):
+            for item in (name, size, modified, destination, status):
                 item.setFlags(text_flags)
-            self.table.setItem(index, 1, name)
-            self.table.setItem(index, 2, destination)
-            self.table.setItem(index, 3, status)
+            self.table.setItem(table_row, COL_FILE, name)
+            self.table.setItem(table_row, COL_SIZE, size)
+            self.table.setItem(table_row, COL_MODIFIED, modified)
+            self.table.setItem(table_row, COL_DESTINATION, destination)
+            self.table.setItem(table_row, COL_STATUS, status)
         self.table.blockSignals(False)
+
+    def _visible_indexes(self) -> list[int]:
+        indexes: list[int] = []
+        for index, row in enumerate(self._rows):
+            if self._hide_skipped.isChecked() and not row.movable:
+                continue
+            indexes.append(index)
+        return indexes
 
     def _destination_text(self, row: PreviewRow, folder: Path) -> str:
         if row.destination is None:
@@ -150,13 +212,91 @@ class MainWindow(QMainWindow):
             return str(row.destination)
 
     def _on_item_changed(self, item: QTableWidgetItem) -> None:
-        if item.column() != 0:
+        if item.column() != COL_INCLUDE:
             return
-        index = item.row()
-        if index >= len(self._rows) or not self._rows[index].movable:
+        table_row = item.row()
+        if table_row >= len(self._visible):
             return
-        self._rows[index].checked = item.checkState() == Qt.CheckState.Checked
+        row = self._rows[self._visible[table_row]]
+        if not row.movable:
+            return
+        row.checked = item.checkState() == Qt.CheckState.Checked
+        self._sync_category_checks()
         self._refresh_buttons()
+
+    def _on_hide_skipped(self, _checked: bool) -> None:
+        if not self._rows:
+            return
+        self._fill_table(Path(self._folder_edit.text().strip()))
+
+    def _on_category_clicked(self, category: str) -> None:
+        box = self._category_boxes.get(category)
+        if box is None:
+            return
+        check = box.checkState() != Qt.CheckState.Unchecked
+        for row in self._rows:
+            if row.movable and row.category == category:
+                row.checked = check
+        self._fill_table(Path(self._folder_edit.text().strip()))
+        self._sync_category_checks()
+        self._refresh_buttons()
+
+    def _rebuild_category_checks(self) -> None:
+        self._clear_category_checks()
+        present = {row.category for row in self._rows if row.movable and row.category}
+        placed = 0
+        for category in self._category_order():
+            if category not in present:
+                continue
+            box = QCheckBox(category)
+            box.setTristate(True)
+            box.clicked.connect(
+                lambda _checked=False, name=category: self._on_category_clicked(name)
+            )
+            row = placed // _CATEGORY_COLUMNS
+            column = placed % _CATEGORY_COLUMNS
+            self._category_layout.addWidget(box, row, column)
+            self._category_boxes[category] = box
+            placed += 1
+        self._sync_category_checks()
+
+    def _clear_category_checks(self) -> None:
+        while self._category_layout.count():
+            item = self._category_layout.takeAt(0)
+            widget = item.widget()
+            if widget is not None:
+                widget.setParent(None)
+                widget.deleteLater()
+        self._category_boxes.clear()
+
+    def _sync_category_checks(self) -> None:
+        for category, box in self._category_boxes.items():
+            rows = [
+                row for row in self._rows if row.movable and row.category == category
+            ]
+            if not rows:
+                continue
+            checked = sum(1 for row in rows if row.checked)
+            if checked == len(rows):
+                state = Qt.CheckState.Checked
+            elif checked == 0:
+                state = Qt.CheckState.Unchecked
+            else:
+                state = Qt.CheckState.PartiallyChecked
+            box.blockSignals(True)
+            box.setCheckState(state)
+            box.blockSignals(False)
+
+    def _category_order(self) -> list[str]:
+        if self._rules is None:
+            return []
+        ordered: list[str] = []
+        names = [category.folder for category in self._rules.categories]
+        names.append(self._rules.fallback)
+        for name in names:
+            if name not in ordered:
+                ordered.append(name)
+        return ordered
 
     def _move(self) -> None:
         chosen = [row for row in self._rows if row.checked and row.movable]
@@ -166,7 +306,7 @@ class MainWindow(QMainWindow):
         answer = QMessageBox.question(
             self,
             "Move files",
-            f"Move {len(chosen)} files into subfolders of {folder}?",
+            move_summary(self._rows, folder, self._category_order()),
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
             QMessageBox.StandardButton.No,
         )
@@ -181,14 +321,13 @@ class MainWindow(QMainWindow):
         self._status.setText(f"Moved {moved} files. {self._status.text()}")
 
     def _undo(self) -> None:
-        count = latest_move_count(self._log_path)
-        if count == 0:
+        if latest_move_count(self._log_path) == 0:
             self._refresh_buttons()
             return
         answer = QMessageBox.question(
             self,
             "Undo",
-            f"Put {count} files back?",
+            undo_summary(self._log_path),
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
             QMessageBox.StandardButton.No,
         )

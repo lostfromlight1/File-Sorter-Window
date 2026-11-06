@@ -22,6 +22,14 @@ Check an item when that feature or phase is finished. The agent updates this fil
 - [x] Undo log outside the sorted folder, and an Undo action
 - [x] Tests on a temporary folder: partial download, subfolder left alone, name clash, and undo
 
+## Review pass
+
+- [x] Size and modified time on each scanned file
+- [x] Category, size, and modified time on each preview row
+- [x] Category checkboxes and a hide-skipped filter on the preview table
+- [x] Move and Undo dialogs describe the files before acting
+- [x] Tests for size, category, summaries, and the table filter
+
 ## Not in v1
 
 Watching, tray, startup, subfolders, keyword rules, file contents, duplicates, photo dates, models, overwrite, and permanent delete.

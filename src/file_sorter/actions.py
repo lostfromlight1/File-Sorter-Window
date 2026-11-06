@@ -17,6 +17,9 @@ class PreviewRow:
     destination: Path | None
     status: str
     checked: bool
+    category: str = ""
+    size_bytes: int | None = None
+    modified: datetime | None = None
 
     @property
     def movable(self) -> bool:
@@ -70,10 +73,13 @@ def build_preview(folder: Path, rules: Rules) -> list[PreviewRow]:
                     destination=None,
                     status=item.status,
                     checked=False,
+                    size_bytes=item.size_bytes,
+                    modified=item.modified,
                 )
             )
             continue
-        directory = category_dir(folder, category_for(rules, item.path.name))
+        category = category_for(rules, item.path.name)
+        directory = category_dir(folder, category)
         destination = unique_destination(directory, item.path.name, reserved)
         reserved.add(path_key(destination))
         rows.append(
@@ -82,9 +88,67 @@ def build_preview(folder: Path, rules: Rules) -> list[PreviewRow]:
                 destination=destination,
                 status=item.status,
                 checked=True,
+                category=category,
+                size_bytes=item.size_bytes,
+                modified=item.modified,
             )
         )
     return rows
+
+
+def move_summary(rows: list[PreviewRow], folder: Path, category_order: list[str]) -> str:
+    chosen = [
+        row
+        for row in rows
+        if row.checked and row.movable and row.destination is not None
+    ]
+    counts: dict[str, int] = {}
+    for row in chosen:
+        counts[row.category] = counts.get(row.category, 0) + 1
+    renamed = sum(
+        1
+        for row in chosen
+        if row.destination is not None and row.destination.name != row.source.name
+    )
+    noun = "file" if len(chosen) == 1 else "files"
+    lines = [f"Move {len(chosen)} {noun} into subfolders of {folder}?", ""]
+    seen: set[str] = set()
+    for category in category_order:
+        count = counts.get(category, 0)
+        if count:
+            lines.append(f"{category}: {count}")
+            seen.add(category)
+    for category, count in counts.items():
+        if category not in seen and count:
+            lines.append(f"{category}: {count}")
+    if renamed == 1:
+        lines.append("1 file will be renamed because that name already exists.")
+    elif renamed > 1:
+        lines.append(
+            f"{renamed} files will be renamed because that name already exists."
+        )
+    return "\n".join(lines)
+
+
+_UNDO_NAME_LIMIT = 15
+
+
+def undo_summary(log_path: Path) -> str:
+    moves = _latest_moves(log_path)
+    noun = "file" if len(moves) == 1 else "files"
+    lines = [f"Put {len(moves)} {noun} back?"]
+    if not moves:
+        return lines[0]
+    lines.append("")
+    shown = moves[:_UNDO_NAME_LIMIT]
+    for move in shown:
+        source = Path(str(move["src"]))
+        destination = Path(str(move["dest"]))
+        lines.append(f"{destination.name} -> {source.name}")
+    extra = len(moves) - len(shown)
+    if extra:
+        lines.append(f"and {extra} more")
+    return "\n".join(lines)
 
 
 def apply_preview(rows: list[PreviewRow], source_root: Path, log_path: Path) -> ApplyResult:
@@ -204,6 +268,20 @@ def _ensure_parent(directory: Path, root: Path) -> list[Path]:
     directory.mkdir(parents=True, exist_ok=True)
     missing.reverse()
     return missing
+
+
+def _latest_moves(log_path: Path) -> list[dict]:
+    runs = _read_runs(log_path)
+    if not runs:
+        return []
+    moves = runs[-1].get("moves", [])
+    if not isinstance(moves, list):
+        return []
+    return [
+        move
+        for move in moves
+        if isinstance(move, dict) and "src" in move and "dest" in move
+    ]
 
 
 def _read_runs(path: Path) -> list[dict]:

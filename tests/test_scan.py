@@ -71,6 +71,41 @@ def test_file_symlink_is_not_movable(tmp_path: Path) -> None:
     assert by_name["real.txt"].movable
 
 
+def test_scan_records_size_and_modified_time(tmp_path: Path) -> None:
+    folder = tmp_path / "inbox"
+    folder.mkdir()
+    (folder / "photo.png").write_bytes(b"png")
+
+    item = scan_folder(folder)[0]
+
+    assert item.size_bytes == 3
+    assert item.modified is not None
+
+
+def test_scan_keeps_a_file_when_stat_fails(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    folder = tmp_path / "inbox"
+    folder.mkdir()
+    target = folder / "photo.png"
+    target.write_bytes(b"png")
+    original = Path.stat
+
+    def guarded(self: Path, *args: object, **kwargs: object):
+        if self == target:
+            raise OSError("denied")
+        return original(self, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "stat", guarded)
+
+    item = scan_folder(folder)[0]
+
+    assert item.path.name == "photo.png"
+    assert item.status == STATUS_READY
+    assert item.size_bytes is None
+    assert item.modified is None
+
+
 def test_exclusively_locked_file_is_not_movable(tmp_path: Path) -> None:
     folder = tmp_path / "inbox"
     folder.mkdir()
